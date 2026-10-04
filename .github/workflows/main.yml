@@ -1,0 +1,89 @@
+name: Build and Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Check project structure
+        run: |
+          echo "Checking project structure..."
+
+          test -f package.json || {
+            echo "ERROR: package.json not found."
+            exit 1
+          }
+
+          test -f index.html || {
+            echo "ERROR: index.html not found."
+            exit 1
+          }
+
+          test -f src/main.tsx || {
+            echo "ERROR: src/main.tsx not found."
+            exit 1
+          }
+
+          echo "Project structure looks good."
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install --legacy-peer-deps
+          fi
+
+      - name: Build website
+        run: |
+          npm run build -- --base=/${{ github.event.repository.name }}/
+
+      - name: Verify production build
+        run: |
+          test -d dist || {
+            echo "ERROR: dist folder was not created."
+            exit 1
+          }
+
+          echo "Production build successful."
+          echo "Generated files:"
+          find dist -maxdepth 2 -type f | head -30
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload website
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
