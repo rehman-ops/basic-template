@@ -1,0 +1,6 @@
+{
+  "name": "GitHub Pages Deployment Studio",
+  "description": "Production GitHub Actions workflow manager, CI/CD pipeline validator, and deployment companion for React and Vite on GitHub Pages.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
